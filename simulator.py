@@ -76,7 +76,7 @@ class Dish:
         self.enchantment = 0
 
     def __str__(self):
-        return f"{self.name} \n {self.quality} \n {self.integrity} \n {self.artistry} \n {self.enchantment} \n \n \n"
+        return f"{self.name} \n {self.quality} Quality \n {self.integrity} Integrity \n {self.artistry} Artistry \n {self.enchantment} Enchantment \n \n \n"
 
     def determineMainIngredient(self, ingredientList: list[Ingredient]):
         self.mainIngredient = random.choice(ingredientList)
@@ -118,15 +118,68 @@ class Dish:
 
     def addIngredient(self, ingredient: Ingredient):
         self.quality += ingredient.quality + ingredient.sweet + ingredient.salt + abs(ingredient.temperature) - ingredient.rot
-        self.integrity += ingredient.luck + ingredient.size - ingredient.blendability - ingredient.liquidity - ingredient.eaten - ingredient.rot - ingredient.atomicnumber
+        self.integrity += 10 + ingredient.luck + ingredient.size - ingredient.blendability - ingredient.liquidity - ingredient.eaten - ingredient.rot - ingredient.atomicnumber
         self.artistry += ingredient.sweet + ingredient.size - ingredient.rot + ingredient.holiness + ingredient.luck + ingredient.filesize
         self.enchantment += ingredient.arcana + ingredient.luck + ingredient.element + ingredient.salt + ingredient.rot + ingredient.sentience + ingredient.holiness
+
+class Judge:
+    def __init__(self):
+        first_names = [
+            "Gordon",
+            "Jamie",
+            "Wolfgang",
+            "Anthony",
+            "Julia",
+            "Nigella",
+            "Thomas",
+            "Alice",
+            "Emeril",
+            "Bobby",
+            "Massimo",
+            "Heston",
+            "Ferran",
+            "José",
+            "Ina",
+            "Rachael",
+            "Marco",
+            "Grant",
+            "Curtis",
+            "Christina"
+        ]
+        last_names = [
+            "Ramsay",
+            "Oliver",
+            "Puck",
+            "Bourdain",
+            "Child",
+            "Lawson",
+            "Keller",
+            "Waters",
+            "Lagasse",
+            "Flay",
+            "Bottura",
+            "Blumenthal",
+            "Adrià",
+            "Andrés",
+            "Garten",
+            "Ray",
+            "White",
+            "Achatz",
+            "Stone",
+            "Tosi"
+        ]
+        self.name = f"{random.choice(first_names)} {random.choice(last_names)}"
+        self.values = [random.randint(0, 100) for _ in range(4)]
+        if sum(self.values) == 0:
+            self.values = [0, 0, 0, 100]
+        else:
+            self.values = [round((v / sum(self.values)) * 100) for v in self.values]
 
 class Kitchen:
     def __init__(self, name):
         self.name = name
         # Temporary Appliance Hardcode
-        self.appliances = [Appliance("Microwave", {"temperature": (2, 5)}), Appliance("Fridge", {"temperature": (-5, -1.2)}), Appliance("Blender", {"filesize": (-10, 0), "liquidity": (10, 2)}), Appliance("Cutting Board", {"size": (-10, 0)})]
+        self.appliances = [Appliance("Microwave", {"temperature": (20, 1)}), Appliance("Fridge", {"temperature": (-10, 1)}), Appliance("Blender", {"filesize": (-10, 1), "liquidity": (10, 1)}), Appliance("Cutting Board", {"size": (-10, 1)})]
         self.ingredients = []
 
     def addIngredient(self, ingredient: Ingredient):
@@ -289,10 +342,6 @@ class PlayingTeam(Team):
         self.currentChef = 0
         self.dishes = []
 
-class Judge:
-    def __init__(self, name):
-        self.name = name
-
 class Match:
     def __init__(self, home: Team, away: Team):
         self.home = home
@@ -302,6 +351,8 @@ class Match:
         self.piledist = 200
         self.homedishes = []
         self.awaydishes = []
+        self.judgeCount = 3
+        self.judges = [Judge() for x in range(self.judgeCount)]
 
         for player in home.runners + home.chefs:
             player.isHome = True
@@ -409,6 +460,35 @@ class Match:
             self.phase = "Preparation"
 
     def judging(self):
+        homepoints = 0
+        awaypoints = 0
+        for dish in self.homedishes:
+            for judge in self.judges:
+                points = 0
+                points += round(judge.values[0]*0.01 * dish.quality)
+                points += round(judge.values[1]*0.01 * dish.integrity)
+                points += round(judge.values[2]*0.01 * dish.artistry)
+                points += round(judge.values[3]*0.01 * dish.enchantment)
+                print(f"Judge {judge.name} has awarded {dish.name} {points} points")
+                homepoints += points
+            print("--------------------------------------------------")
+        for dish in self.awaydishes:
+            for judge in self.judges:
+                points = 0
+                points += round(judge.values[0]*0.01 * dish.quality)
+                points += round(judge.values[1]*0.01 * dish.integrity)
+                points += round(judge.values[2]*0.01 * dish.artistry)
+                points += round(judge.values[3]*0.01 * dish.enchantment)
+                print(f"Judge {judge.name} has awarded {dish.name} {points} points")
+                awaypoints += points
+            print("--------------------------------------------------")
+        if homepoints == awaypoints:
+            print(f"Tie \nHome: {homepoints}\nAway: {awaypoints}")
+        elif homepoints > awaypoints:
+            print(f"Home Victory \nHome: {homepoints}\nAway: {awaypoints}")
+        else:
+            print(f"Away Victory \nHome: {homepoints}\nAway: {awaypoints}")
+        self.phase = "Done"
         pass
 
     def step(self):
@@ -450,7 +530,7 @@ def main():
 
     match = Match(team1, team2)
 
-    while match.phase != "Judging":
+    while match.phase != "Done":
         match.step()
 
 
