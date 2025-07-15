@@ -1,5 +1,6 @@
 import math
 import random
+import json
 
 class Ingredient:
     def __init__(self):
@@ -61,8 +62,8 @@ class Appliance:
     def applianceUsed(self, ingredient: Ingredient):
         for stat, change in self.statEffects.items():
             print(f"{self.name} used to increase {stat} by {change}")
-            setattr(ingredient, stat, getattr(ingredient, stat) + change[0])
-            setattr(ingredient, stat, getattr(ingredient, stat) * change[1])
+            setattr(ingredient, stat, getattr(ingredient, stat) + change["add"])
+            setattr(ingredient, stat, getattr(ingredient, stat) * change["mult"])
             print(f"{stat} increased to {getattr(ingredient, stat)}")
         return ingredient
 
@@ -118,7 +119,7 @@ class Dish:
 
     def addIngredient(self, ingredient: Ingredient):
         self.quality += ingredient.quality + ingredient.sweet + ingredient.salt + abs(ingredient.temperature) - ingredient.rot
-        self.integrity += 10 + ingredient.luck + ingredient.size - ingredient.blendability - ingredient.liquidity - ingredient.eaten - ingredient.rot - ingredient.atomicnumber
+        self.integrity += ingredient.luck + ingredient.size - ingredient.blendability - ingredient.liquidity - ingredient.eaten - ingredient.rot - ingredient.atomicnumber
         self.artistry += ingredient.sweet + ingredient.size - ingredient.rot + ingredient.holiness + ingredient.luck + ingredient.filesize
         self.enchantment += ingredient.arcana + ingredient.luck + ingredient.element + ingredient.salt + ingredient.rot + ingredient.sentience + ingredient.holiness
 
@@ -179,7 +180,12 @@ class Kitchen:
     def __init__(self, name):
         self.name = name
         # Temporary Appliance Hardcode
-        self.appliances = [Appliance("Microwave", {"temperature": (20, 1)}), Appliance("Fridge", {"temperature": (-10, 1)}), Appliance("Blender", {"filesize": (-10, 1), "liquidity": (10, 1)}), Appliance("Cutting Board", {"size": (-10, 1)})]
+        self.appliances = []
+
+        with open("data/appliances/appliancelist.json") as f:
+            for name, data in json.load(f)["appliances"].items():
+                self.appliances.append(Appliance(name, data))
+
         self.ingredients = []
 
     def addIngredient(self, ingredient: Ingredient):
@@ -335,20 +341,13 @@ class Team:
             self.chefs.append(self.chefs.pop(0))
             self.activeChef = self.chefs[0]
 
-class PlayingTeam(Team):
-    def __init__(self, name, arena: Arena):
-        super().__init__(name, arena)
-        self.ingredients = []
-        self.currentChef = 0
-        self.dishes = []
-
 class Match:
     def __init__(self, home: Team, away: Team):
         self.home = home
         self.away = away
         self.phase = "Preparation"
         self.pile = []
-        self.piledist = 200
+        self.piledist = 40
         self.homedishes = []
         self.awaydishes = []
         self.judgeCount = 3
@@ -403,7 +402,6 @@ class Match:
                 if distance > 0:
                     distance -= random.randint(0, 10+runner.spd)
                     pile_runners[runner] = distance
-                    print(f"{runner.name} is now {distance} away")
                 # if not make runner get closer based on speed
                 else:
                     # if runner is here (0 distance)
@@ -440,16 +438,16 @@ class Match:
                     else:
                         cowards.append(runner)
 
-
-
     def cooking(self):
-        actionsLeft = 20
+        actionsLeft = 0
         while actionsLeft > 0:
             actionsLeft -= 1
             self.home.activeChef.chooseAppliance(self.home.kitchen)
             self.away.activeChef.chooseAppliance(self.away.kitchen)
         self.homedishes.append(self.home.kitchen.createDish())
         self.awaydishes.append(self.away.kitchen.createDish())
+        self.home.kitchen.clearIngredient()
+        self.away.kitchen.clearIngredient()
         if len(self.homedishes) == 3:
             for dish in self.homedishes:
                 print(dish)
@@ -532,9 +530,6 @@ def main():
 
     while match.phase != "Done":
         match.step()
-
-
-
 
 if __name__ == "__main__":
     main()

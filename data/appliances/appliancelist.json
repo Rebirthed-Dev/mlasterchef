@@ -1,0 +1,11 @@
+{"appliances":
+  {
+    "microwave" : {
+      "temperature" : {"add":  2, "mult":  1}
+    },
+    "blender" : {
+      "liquidity" : {"add": 5, "mult": 1},
+      "blendability" : {"add": -10, "mult": 1}
+    }   
+  }
+}
