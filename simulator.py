@@ -36,7 +36,113 @@ class Ingredient:
             "cumin"
         ]
         self.name = random.choice(names)
-        self.quality = 1
+        self.quality = 1 # q+ i+
+        self.sweet = 1 # q+ a+
+        self.salt = 1 # q+ e-
+        self.blendability = 1 # i-
+        self.temperature = 1 # q*
+        self.liquidity = 1 # i-
+        self.size = 1 # i+ a+
+        self.sentience = 0 # e+
+        self.rot = 0 # q- i- a- e+
+        self.arcana = 1 # unique
+        self.holiness = 1 # e+ a+
+        self.eaten = 0 # i-
+        self.element = 0 # e+
+        self.atomicnumber = 1 # i-
+        self.luck = 1 # e+ a+ i+
+        self.filesize = 1 # a+
+
+class Appliance:
+    def __init__(self, name, statEffects:{}):
+        self.name = name
+        self.statEffects = statEffects
+
+    def applianceUsed(self, ingredient: Ingredient):
+        for stat, change in self.statEffects.items():
+            print(f"{self.name} used to increase {stat} by {change}")
+            setattr(ingredient, stat, getattr(ingredient, stat) + change[0])
+            setattr(ingredient, stat, getattr(ingredient, stat) * change[1])
+            print(f"{stat} increased to {getattr(ingredient, stat)}")
+        return ingredient
+
+class Dish:
+    def __init__(self):
+        self.name = None
+        self.mainIngredient = None
+        self.quality = 0
+        self.integrity = 0
+        self.artistry = 0
+        self.enchantment = 0
+
+    def __str__(self):
+        return f"{self.name} \n {self.quality} \n {self.integrity} \n {self.artistry} \n {self.enchantment} \n \n \n"
+
+    def determineMainIngredient(self, ingredientList: list[Ingredient]):
+        self.mainIngredient = random.choice(ingredientList)
+
+    def determineName(self):
+        dishes = [
+                "soup",
+                "salad",
+                "stew",
+                "curry",
+                "sandwich",
+                "pasta",
+                "pie",
+                "stir fry",
+                "casserole",
+                "risotto",
+                "tacos",
+                "burger",
+                "omelette",
+                "wrap",
+                "pizza",
+                "lasagna",
+                "noodles",
+                "bake",
+                "dip",
+                "skewers",
+                "gratin",
+                "sauce",
+                "toast",
+                "rolls",
+                "chili",
+                "quiche",
+                "patties",
+                "gnocchi",
+                "dumplings",
+                "kabobs"
+        ]
+        self.name = f"{self.mainIngredient.name} {random.choice(dishes)}"
+
+    def addIngredient(self, ingredient: Ingredient):
+        self.quality += ingredient.quality + ingredient.sweet + ingredient.salt + abs(ingredient.temperature) - ingredient.rot
+        self.integrity += ingredient.luck + ingredient.size - ingredient.blendability - ingredient.liquidity - ingredient.eaten - ingredient.rot - ingredient.atomicnumber
+        self.artistry += ingredient.sweet + ingredient.size - ingredient.rot + ingredient.holiness + ingredient.luck + ingredient.filesize
+        self.enchantment += ingredient.arcana + ingredient.luck + ingredient.element + ingredient.salt + ingredient.rot + ingredient.sentience + ingredient.holiness
+
+class Kitchen:
+    def __init__(self, name):
+        self.name = name
+        # Temporary Appliance Hardcode
+        self.appliances = [Appliance("Microwave", {"temperature": (2, 5)}), Appliance("Fridge", {"temperature": (-5, -1.2)}), Appliance("Blender", {"filesize": (-10, 0), "liquidity": (10, 2)}), Appliance("Cutting Board", {"size": (-10, 0)})]
+        self.ingredients = []
+
+    def addIngredient(self, ingredient: Ingredient):
+        self.ingredients.append(ingredient)
+
+    def clearIngredient(self):
+        self.ingredients = []
+
+    def createDish(self):
+        dish = Dish()
+        for ingredient in self.ingredients:
+            dish.addIngredient(ingredient)
+
+        dish.determineMainIngredient(self.ingredients)
+        dish.determineName()
+        return dish
 
 class Player:
     def __init__(self):
@@ -107,6 +213,7 @@ class Player:
         self.name = f"{random.choice(firstnames)} {random.choice(lastnames)}"
         self.teamName = None
         self.inventory = []
+        self.isHome = None
         # Chef Stats
         self.pro = 1 #Proficiency
         self.gus = 1 #Gusto
@@ -122,21 +229,24 @@ class Player:
 
         self.position = 1
 
+    def setHome(self, homeaway):
+        self.isHome = homeaway
+
     def setTeamName(self, teamName):
         self.teamName = teamName
 
     def addToInventory(self, ingredient: Ingredient):
         self.inventory.append(ingredient)
 
-class Appliance:
-    def __init__(self, name):
-        self.name = name
+    def chooseAppliance(self, kitchen: Kitchen):
+        appliance = random.choice(kitchen.appliances)
+        ingredientNum = random.randint(0, len(kitchen.ingredients)-1)
+        kitchen.ingredients[ingredientNum] = appliance.applianceUsed(kitchen.ingredients[ingredientNum])
 
 class Arena:
     def __init__(self, name):
         self.name = name
         # Arena Stats
-        self.appliances = []
 
 class Team:
     def __init__(self, name, arena: Arena):
@@ -144,6 +254,8 @@ class Team:
         self.chefs = []
         self.runners = []
         self.arena = arena
+        self.kitchen = Kitchen("Yo mama")
+        self.activeChef = None
 
     def addChef(self, chef: Player):
         self.chefs.append(chef)
@@ -163,21 +275,19 @@ class Team:
         except ValueError:
             print("No such runner")
 
+    def rotateChef(self):
+        if self.activeChef is None:
+            self.activeChef = self.chefs[0]
+        else:
+            self.chefs.append(self.chefs.pop(0))
+            self.activeChef = self.chefs[0]
+
 class PlayingTeam(Team):
     def __init__(self, name, arena: Arena):
         super().__init__(name, arena)
         self.ingredients = []
         self.currentChef = 0
         self.dishes = []
-
-
-
-
-class Dish:
-    def __init__(self, name):
-        self.name = name
-        self.ingredients = []
-        self.quality = 0
 
 class Judge:
     def __init__(self, name):
@@ -190,6 +300,13 @@ class Match:
         self.phase = "Preparation"
         self.pile = []
         self.piledist = 200
+        self.homedishes = []
+        self.awaydishes = []
+
+        for player in home.runners + home.chefs:
+            player.isHome = True
+        for player in away.runners + away.chefs:
+            player.isHome = False
 
     def preparation(self):
         self.phase = "Running"
@@ -215,11 +332,19 @@ class Match:
             running_tick += 1
             #remove leavers from pile_runners list
             for runner in cowards:
+                if runner.isHome:
+                    for ingredient in runner.inventory:
+                        self.home.kitchen.ingredients.append(ingredient)
+                else:
+                    for ingredient in runner.inventory:
+                        self.away.kitchen.ingredients.append(ingredient)
+                runner.inventory = []
                 pile_runners.pop(runner)
             cowards = []
             print(list(pile_runners.items()))
             #if pile_runners empty, stop while loop
             if len(pile_runners) == 0:
+                self.phase = "Cooking"
                 break
 
             for runner, distance in pile_runners.items():
@@ -267,7 +392,21 @@ class Match:
 
 
     def cooking(self):
-        pass
+        actionsLeft = 20
+        while actionsLeft > 0:
+            actionsLeft -= 1
+            self.home.activeChef.chooseAppliance(self.home.kitchen)
+            self.away.activeChef.chooseAppliance(self.away.kitchen)
+        self.homedishes.append(self.home.kitchen.createDish())
+        self.awaydishes.append(self.away.kitchen.createDish())
+        if len(self.homedishes) == 3:
+            for dish in self.homedishes:
+                print(dish)
+            for dish in self.awaydishes:
+                print(dish)
+            self.phase = "Judging"
+        else:
+            self.phase = "Preparation"
 
     def judging(self):
         pass
@@ -299,17 +438,23 @@ def main():
     for x in range(4):
         player = Player()
         player.setTeamName(team2.name)
-        team1.addChef(player)
+        team2.addChef(player)
 
     for x in range(7):
         player = Player()
         player.setTeamName(team2.name)
-        team1.addRunner(player)
+        team2.addRunner(player)
+
+    team1.rotateChef()
+    team2.rotateChef()
 
     match = Match(team1, team2)
 
-    match.step()
-    match.step()
+    while match.phase != "Judging":
+        match.step()
+
+
+
 
 if __name__ == "__main__":
     main()
