@@ -6,6 +6,11 @@
     "blender" : {
       "liquidity" : {"add": 5, "mult": 1},
       "blendability" : {"add": -10, "mult": 1}
-    }   
+    },
+    "freezer" : {
+      "liquidity" : {"add": -10, "mult": 1},
+      "temperature" : {"add": -10, "mult": 1},
+      "rot": {"add": -10, "mult": 1}
+    }
   }
 }

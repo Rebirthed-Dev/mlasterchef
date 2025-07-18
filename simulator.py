@@ -3,56 +3,40 @@ import random
 import json
 
 class Ingredient:
+    """
+    This class represents an ingredient in the simulator
+    """
     def __init__(self):
-        names = [
-            "salt",
-            "sugar",
-            "butter",
-            "milk",
-            "eggs",
-            "baking powder",
-            "flour",
-            "vanilla extract",
-            "olive oil",
-            "garlic",
-            "onion",
-            "tomato",
-            "black pepper",
-            "chicken breast",
-            "beef",
-            "carrot",
-            "potato",
-            "rice",
-            "pasta",
-            "cheddar cheese",
-            "mozzarella",
-            "spinach",
-            "broccoli",
-            "mushrooms",
-            "lemon juice",
-            "soy sauce",
-            "honey",
-            "cinnamon",
-            "ginger",
-            "cumin"
-        ]
-        self.name = random.choice(names)
-        self.quality = 1 # q+ i+
-        self.sweet = 1 # q+ a+
-        self.salt = 1 # q+ e-
-        self.blendability = 1 # i-
-        self.temperature = 1 # q*
-        self.liquidity = 1 # i-
-        self.size = 1 # i+ a+
-        self.sentience = 0 # e+
-        self.rot = 0 # q- i- a- e+
-        self.arcana = 1 # unique
-        self.holiness = 1 # e+ a+
-        self.eaten = 0 # i-
-        self.element = 0 # e+
-        self.atomicnumber = 1 # i-
-        self.luck = 1 # e+ a+ i+
-        self.filesize = 1 # a+
+        self.name = None
+        self.quality = 0
+        self.sweet = 0
+        self.salt = 0
+        self.blendability = 0
+        self.temperature = 0
+        self.liquidity = 0
+        self.size = 0
+        self.rot = 0
+        self.holiness = 0
+        self.eaten = 0
+        self.luck = 0
+        self.arcana = None
+        self.atomicnumber = 0
+        self.element = None
+        self.sentience = 0
+
+        with open("data/food/foods.json") as f:
+            json_data = json.load(f)
+            name = random.choice(list(json_data.keys()))
+            data = json_data[name]
+            self.name = name
+            for stat, value in data.items():
+                if stat in ["atomicnumber", "sentience", "element", "arcana"]:
+                    setattr(self, stat, value)
+                else:
+                    setattr(self, stat, random.randint(value["min"], value["max"]))
+
+    def __str__(self):
+        return f"{self.name} \nQuality: {self.quality} \nSweet: {self.sweet} \nSalt: {self.salt} \nBlendability: {self.blendability} \nTemp: {self.temperature} \nLiquidity: {self.liquidity} \nSize: {self.size} \nRot: {self.rot} \nHoliness: {self.holiness} \nEaten: {self.eaten} \nLuck: {self.luck} \nArcana: {self.arcana} \nAN: {self.atomicnumber} \nElement: {self.element} \nSentience: {self.sentience} \n"
 
 class Appliance:
     def __init__(self, name, statEffects:{}):
@@ -62,8 +46,8 @@ class Appliance:
     def applianceUsed(self, ingredient: Ingredient):
         for stat, change in self.statEffects.items():
             print(f"{self.name} used to increase {stat} by {change}")
-            setattr(ingredient, stat, getattr(ingredient, stat) + change["add"])
-            setattr(ingredient, stat, getattr(ingredient, stat) * change["mult"])
+            setattr(ingredient, stat, min(max(getattr(ingredient, stat) + change["add"], -50), 50))
+            setattr(ingredient, stat, min(max(getattr(ingredient, stat) * change["mult"],-50), 50))
             print(f"{stat} increased to {getattr(ingredient, stat)}")
         return ingredient
 
@@ -75,11 +59,13 @@ class Dish:
         self.integrity = 0
         self.artistry = 0
         self.enchantment = 0
+        self.ingredients = []
 
     def __str__(self):
-        return f"{self.name} \n {self.quality} Quality \n {self.integrity} Integrity \n {self.artistry} Artistry \n {self.enchantment} Enchantment \n \n \n"
+        return f"{self.name} \n {self.quality} Quality {''.join(['★' for x in range(round(self.quality/(50*len(self.ingredientList))))])}{'⯪' if round(self.quality%(50*len(self.ingredientList))) > 25 else ''} \n {self.integrity} Integrity {''.join(['★' for x in range(round(self.integrity/(50*len(self.ingredientList))))])}{'⯪' if round(self.integrity%(50*len(self.ingredientList))) > 25 else ''}\n {self.artistry} Artistry {''.join(['★' for x in range(round(self.artistry/(50*len(self.ingredientList))))])}{'⯪' if round(self.artistry%(50*len(self.ingredientList))) > 25 else ''}\n {self.enchantment} Enchantment {''.join(['★' for x in range(round(self.enchantment/(50*len(self.ingredientList))))])}{'⯪' if round(self.enchantment%(50*len(self.ingredientList))) > 25 else ''}\n \n \n"
 
     def determineMainIngredient(self, ingredientList: list[Ingredient]):
+        self.ingredientList = ingredientList
         self.mainIngredient = random.choice(ingredientList)
 
     def determineName(self):
@@ -118,10 +104,10 @@ class Dish:
         self.name = f"{self.mainIngredient.name} {random.choice(dishes)}"
 
     def addIngredient(self, ingredient: Ingredient):
-        self.quality += ingredient.quality + ingredient.sweet + ingredient.salt + abs(ingredient.temperature) - ingredient.rot
-        self.integrity += ingredient.luck + ingredient.size - ingredient.blendability - ingredient.liquidity - ingredient.eaten - ingredient.rot - ingredient.atomicnumber
-        self.artistry += ingredient.sweet + ingredient.size - ingredient.rot + ingredient.holiness + ingredient.luck + ingredient.filesize
-        self.enchantment += ingredient.arcana + ingredient.luck + ingredient.element + ingredient.salt + ingredient.rot + ingredient.sentience + ingredient.holiness
+        self.quality += round(ingredient.quality + ingredient.sweet + ingredient.salt + abs(ingredient.temperature) - ingredient.rot + ingredient.luck*0.1 - ingredient.eaten)
+        self.integrity += round(ingredient.luck*0.1 + ingredient.size - ingredient.blendability - ingredient.liquidity - ingredient.eaten - ingredient.rot - ingredient.atomicnumber)
+        self.artistry += round(ingredient.sweet + ingredient.size - ingredient.rot + ingredient.holiness + ingredient.luck*0.1)
+        self.enchantment += round(ingredient.luck*0.1 + ingredient.salt + ingredient.rot + ingredient.sentience + ingredient.holiness)
 
 class Judge:
     def __init__(self):
@@ -179,7 +165,6 @@ class Judge:
 class Kitchen:
     def __init__(self, name):
         self.name = name
-        # Temporary Appliance Hardcode
         self.appliances = []
 
         with open("data/appliances/appliancelist.json") as f:
@@ -366,6 +351,9 @@ class Match:
         for x in range(0, random.randint(10, 20)):
             self.pile.append(Ingredient())
 
+        for x in self.pile:
+            print(x)
+
         # Generate Runner speed order
         pile_runners = {
         } # distance each runner is from pile, 0 = at pile, anything above = not
@@ -391,7 +379,6 @@ class Match:
                 runner.inventory = []
                 pile_runners.pop(runner)
             cowards = []
-            print(list(pile_runners.items()))
             #if pile_runners empty, stop while loop
             if len(pile_runners) == 0:
                 self.phase = "Cooking"
@@ -427,7 +414,6 @@ class Match:
                     for action in actions_to_add:
                         action_chances[action] = chances
                     selected_action = random.choices(population=list(action_chances.keys()), weights=list(action_chances.values()), k=1)[0]
-                    print(f"Runner {runner.name} has chosen action {selected_action}\n")
                     if selected_action == "gather":
                         chosen_ingredient = random.choice(self.pile)
                         print(f"Chosen ingredient {chosen_ingredient.name}\n")
@@ -439,7 +425,7 @@ class Match:
                         cowards.append(runner)
 
     def cooking(self):
-        actionsLeft = 0
+        actionsLeft = 20
         while actionsLeft > 0:
             actionsLeft -= 1
             self.home.activeChef.chooseAppliance(self.home.kitchen)
