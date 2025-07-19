@@ -2,6 +2,11 @@ import math
 import random
 import json
 
+# constants that i'm putting here so you don't have to comb through functions
+
+# Determines how many ingredients a Runner can carry at minimum. Strength modifiers add onto this additively.
+RUNNER_BASE_CARRY_CAPACITY = 2
+
 class Ingredient:
     """
     This class represents an ingredient in the simulator.
@@ -305,6 +310,7 @@ class Player:
         self.name = f"{random.choice(firstnames)} {random.choice(lastnames)}"
         self.teamName = None
         self.inventory = []
+        self.maxInv = None # initialised with Strength when Running, base at RUNNER_BASE_CARRYING_CAPACITY
         self.isHome = None
         # Chef Stats
         self.pro = 1 #Proficiency
@@ -312,7 +318,7 @@ class Player:
         self.div = 1 #Divinity
         self.dis = 1 #Dissapointability
         self.foc = 1 #Focus
-        self.str = 1 #Strength
+        self.str = random.randint(1, 50) #Strength - Determines Runner carry capacity bonuses.
         self.cow = 1 #Cowardice
         self.spd = random.randint(1,5) #Speed
         self.thi = 1 #Thickness
@@ -483,8 +489,17 @@ class Match:
         } # distance each runner is from pile, 0 = at pile, anything above = not
         for runner in self.home.runners:
             pile_runners[runner] = self.piledist
+            # set runner carry capacity
+            base_carry_capacity = RUNNER_BASE_CARRY_CAPACITY + (runner.str // 10) # constant base even if no strength
+            extra_capacity_chance = runner.str % 10
+            # 10 strength = 1 guaranteed capacity, remainder strength under 10 is a 10% chance per point for +1 bonus
+            runner.maxInv = base_carry_capacity + random.choices([0, 1], weights=[1-extra_capacity_chance, extra_capacity_chance])[0]
         for runner in self.away.runners:
             pile_runners[runner] = self.piledist
+            # set runner carry capacity
+            base_carry_capacity = RUNNER_BASE_CARRY_CAPACITY + (runner.str // 10)  # constant base even if no strength
+            extra_capacity_chance = runner.str % 10
+            runner.maxInv = base_carry_capacity + random.choices([0, 1], weights=[1 - extra_capacity_chance, extra_capacity_chance])[0]
         # returning to base is instant
         running_tick = 0
 
@@ -523,9 +538,10 @@ class Match:
                             attack_possible = True
                             break
                     # if there isn't - set actions excluding attack
-                    # if there are no ingredients left - consolidate running and gathering into just running
                     gathering_possible = True
-                    if len(self.pile) <= 0:
+                    # if pile isn't empty and runner inventory is not full
+                    # - consolidate running and gathering into just running
+                    if len(self.pile) <= 0 and len(runner.inventory) < runner.maxInv:
                         gathering_possible = False
                     # get action percentages based on this
                     actions_to_add = ["run"]
