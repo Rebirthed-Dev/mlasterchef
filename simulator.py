@@ -40,10 +40,20 @@ class Ingredient:
 
 class Appliance:
     def __init__(self, name, statEffects:{}):
+        """
+        Creates an Appliance object
+        :param name: Name of appliance
+        :param statEffects: Dictionary of stats effects
+        """
         self.name = name
         self.statEffects = statEffects
 
     def applianceUsed(self, ingredient: Ingredient):
+        """
+        Uses the appliance on the provided ingredient object
+        :param ingredient: Ingredient object
+        :return: Modified Ingredient object
+        """
         for stat, change in self.statEffects.items():
             print(f"{self.name} used to increase {stat} by {change}")
             setattr(ingredient, stat, min(max(getattr(ingredient, stat) + change["add"], -50), 50))
@@ -53,6 +63,7 @@ class Appliance:
 
 class Dish:
     def __init__(self):
+        """Creates a dish object with empty stats"""
         self.name = None
         self.mainIngredient = None
         self.quality = 0
@@ -65,10 +76,19 @@ class Dish:
         return f"{self.name} \n {self.quality} Quality {''.join(['★' for x in range(round(self.quality/(50*len(self.ingredientList))))])}{'⯪' if round(self.quality%(50*len(self.ingredientList))) > 25 else ''} \n {self.integrity} Integrity {''.join(['★' for x in range(round(self.integrity/(50*len(self.ingredientList))))])}{'⯪' if round(self.integrity%(50*len(self.ingredientList))) > 25 else ''}\n {self.artistry} Artistry {''.join(['★' for x in range(round(self.artistry/(50*len(self.ingredientList))))])}{'⯪' if round(self.artistry%(50*len(self.ingredientList))) > 25 else ''}\n {self.enchantment} Enchantment {''.join(['★' for x in range(round(self.enchantment/(50*len(self.ingredientList))))])}{'⯪' if round(self.enchantment%(50*len(self.ingredientList))) > 25 else ''}\n \n \n"
 
     def determineMainIngredient(self, ingredientList: list[Ingredient]):
+        """
+        Sets the ingredient list and chooses a main ingredient (currently random)
+        :param ingredientList: List of Ingredient objects
+        :return: none
+        """
         self.ingredientList = ingredientList
         self.mainIngredient = random.choice(ingredientList)
 
     def determineName(self):
+        """
+        Chooses a name for dish
+        :return: none
+        """
         dishes = [
                 "soup",
                 "salad",
@@ -104,6 +124,9 @@ class Dish:
         self.name = f"{self.mainIngredient.name} {random.choice(dishes)}"
 
     def addIngredient(self, ingredient: Ingredient):
+        """
+        Adds an ingredient to the dish stats
+        """
         self.quality += round(ingredient.quality + ingredient.sweet + ingredient.salt + abs(ingredient.temperature) - ingredient.rot + ingredient.luck*0.1 - ingredient.eaten)
         self.integrity += round(ingredient.luck*0.1 + ingredient.size - ingredient.blendability - ingredient.liquidity - ingredient.eaten - ingredient.rot - ingredient.atomicnumber)
         self.artistry += round(ingredient.sweet + ingredient.size - ingredient.rot + ingredient.holiness + ingredient.luck*0.1)
@@ -111,6 +134,9 @@ class Dish:
 
 class Judge:
     def __init__(self):
+        """
+        Create a Judge object, with random preferences
+        """
         first_names = [
             "Gordon",
             "Jamie",
@@ -156,6 +182,7 @@ class Judge:
             "Tosi"
         ]
         self.name = f"{random.choice(first_names)} {random.choice(last_names)}"
+        # The code after this creates a list of 4 numbers summing to 100, such as [25, 15, 35, 25], with each number being a preference towards a dish stat in the order quality integrity artistry enchantment
         self.values = [random.randint(0, 100) for _ in range(4)]
         if sum(self.values) == 0:
             self.values = [0, 0, 0, 100]
@@ -164,6 +191,11 @@ class Judge:
 
 class Kitchen:
     def __init__(self, name):
+        """
+        Initialise a kitchen object containing a name and a list of appliances.
+        Kitchens also store ingredients during the match
+        :param name: Name of Kitchen
+        """
         self.name = name
         self.appliances = []
 
@@ -174,12 +206,25 @@ class Kitchen:
         self.ingredients = []
 
     def addIngredient(self, ingredient: Ingredient):
+        """
+        Add an ingredient to the kitchen.
+        :param ingredient: Ingredient to add.
+        :return: none
+        """
         self.ingredients.append(ingredient)
 
     def clearIngredient(self):
+        """
+        Clear all ingredients from the kitchen.
+        :return: none
+        """
         self.ingredients = []
 
     def createDish(self):
+        """
+        Create a dish from all ingredients within the kitchen.
+        :return: The created Dish object
+        """
         dish = Dish()
         for ingredient in self.ingredients:
             dish.addIngredient(ingredient)
@@ -190,6 +235,9 @@ class Kitchen:
 
 class Player:
     def __init__(self):
+        """
+        Initialise a player object, currently contains stats and a name, as well as a team name and inventory list.
+        """
         firstnames = [
                     "James",
                     "Olivia",
@@ -273,27 +321,62 @@ class Player:
 
         self.position = 1
 
-    def setHome(self, homeaway):
+    def setHome(self, homeaway: bool):
+        """
+        Designate player as part of the Home Team for the match
+        :param homeaway: True if home
+        :return: none
+        """
         self.isHome = homeaway
 
     def setTeamName(self, teamName):
+        """
+        Sets team name for player
+        :param teamName: Team name
+        :return: none
+        """
         self.teamName = teamName
 
     def addToInventory(self, ingredient: Ingredient):
+        """
+        Adds ingredient to player inventory for running phase.
+        :param ingredient: Ingredient object
+        :return: none
+        """
         self.inventory.append(ingredient)
 
     def chooseAppliance(self, kitchen: Kitchen):
+        """
+        Player will choose an appliance from the list of appliances in the kitchen provided.
+        :param kitchen: Kitchen object
+        :return: none
+        """
         appliance = random.choice(kitchen.appliances)
         ingredientNum = random.randint(0, len(kitchen.ingredients)-1)
         kitchen.ingredients[ingredientNum] = appliance.applianceUsed(kitchen.ingredients[ingredientNum])
 
 class Arena:
     def __init__(self, name):
+        """
+        Initialise a new arena, currently just contains a name
+        :param name: Name of the arena.
+        """
         self.name = name
         # Arena Stats
 
 class Team:
     def __init__(self, name, arena: Arena):
+        """
+        Initialises a new Team object.
+        Team objects contain by default:
+         - Name
+         - Empty Chef List
+         - Empty Runner List
+         - Arena
+         - Default Kitchen
+        :param name: Name of the Team
+        :param arena: Arena object
+        """
         self.name = name
         self.chefs = []
         self.runners = []
@@ -302,24 +385,48 @@ class Team:
         self.activeChef = None
 
     def addChef(self, chef: Player):
+        """
+        Adds a chef to the team
+        :param chef: Player object to add
+        :return: none
+        """
         self.chefs.append(chef)
 
     def removeChef(self, chef: Player):
+        """
+        Removes a chef from the team
+        :param chef: Player object to be removed
+        :return: none
+        """
         try:
             self.chefs.remove(chef)
         except:
             print("No such chef")
 
     def addRunner(self, runner: Player):
+        """
+        Adds a runner to the team
+        :param runner: Player object to be added
+        :return: none
+        """
         self.runners.append(runner)
 
     def removeRunner(self, runner: Player):
+        """
+        Removes a runner from the team
+        :param runner: Player Object to be removed
+        :return: none
+        """
         try:
             self.runners.remove(runner)
         except ValueError:
             print("No such runner")
 
     def rotateChef(self):
+        """
+        Rotates the active chef from the teams chef roster, or designates one on teams with no active chef
+        :return: none
+        """
         if self.activeChef is None:
             self.activeChef = self.chefs[0]
         else:
@@ -327,16 +434,25 @@ class Team:
             self.activeChef = self.chefs[0]
 
 class Match:
+    """
+    The Match object contains information about a match, including home and away teams, current state of an in progress match, ingredient pile information, and judges.
+    """
     def __init__(self, home: Team, away: Team):
+        """
+        Initialise the match
+        :param home: Team Object for Home
+        :param away: Team Object for Away
+        :return: none
+        """
         self.home = home
         self.away = away
         self.phase = "Preparation"
-        self.pile = []
-        self.piledist = 40
+        self.pile = [] # Stores Ingredients in the pile
+        self.piledist = 40 # Default distance to pile
         self.homedishes = []
         self.awaydishes = []
         self.judgeCount = 3
-        self.judges = [Judge() for x in range(self.judgeCount)]
+        self.judges = [Judge() for x in range(self.judgeCount)] # Creates set of Judges
 
         for player in home.runners + home.chefs:
             player.isHome = True
@@ -344,14 +460,22 @@ class Match:
             player.isHome = False
 
     def preparation(self):
+        """
+        Performs the preparation phase of the match, currently nothing.
+        :return: none
+        """
         self.phase = "Running"
 
     def running(self):
+        """
+        Performs the running phase of the match, starting runners off getting ingredients.
+        :return: none
+        """
         # Generate Ingredients for Pile
         for x in range(0, random.randint(10, 20)):
             self.pile.append(Ingredient())
 
-        for x in self.pile:
+        for x in self.pile: # prints all ingredients for debug purposes
             print(x)
 
         # Generate Runner speed order
@@ -419,21 +543,32 @@ class Match:
                         print(f"Chosen ingredient {chosen_ingredient.name}\n")
                         runner.inventory.append(chosen_ingredient)
                         self.pile.remove(chosen_ingredient)
-                    elif selected_action == "attack":
+                    elif selected_action == "attack": # attack code currently does nothing
                         pass
                     else:
                         cowards.append(runner)
 
     def cooking(self):
-        actionsLeft = 20
+        """
+        Performs the Cooking step, doing actions to ingredients stored in kitchens
+        :return: none
+        """
+        actionsLeft = 20 # Denotes the number of actions available by default
         while actionsLeft > 0:
             actionsLeft -= 1
+            # each chef chooses an appliance
             self.home.activeChef.chooseAppliance(self.home.kitchen)
             self.away.activeChef.chooseAppliance(self.away.kitchen)
+        # once actions are performed dish is created and stored in Kitchen Object
         self.homedishes.append(self.home.kitchen.createDish())
         self.awaydishes.append(self.away.kitchen.createDish())
+        # Kitchen ingredient piles are cleared
         self.home.kitchen.clearIngredient()
         self.away.kitchen.clearIngredient()
+        # Active chef is rotated
+        self.home.rotateChef()
+        self.away.rotateChef()
+        # If 3rd dish has been made advances to judging
         if len(self.homedishes) == 3:
             for dish in self.homedishes:
                 print(dish)
@@ -444,6 +579,10 @@ class Match:
             self.phase = "Preparation"
 
     def judging(self):
+        """
+        Performs the Judging step, awarding points based on the Judges in the match object.
+        :return: none
+        """
         homepoints = 0
         awaypoints = 0
         for dish in self.homedishes:
@@ -476,6 +615,10 @@ class Match:
         pass
 
     def step(self):
+        """
+        Pushes the simulation forward by one step
+        :return: none
+        """
         if self.phase == "Preparation":
             self.preparation()
         elif self.phase == "Running":
