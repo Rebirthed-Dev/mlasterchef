@@ -4,7 +4,7 @@ import json
 
 class Ingredient:
     """
-    This class represents an ingredient in the simulator
+    This class represents an ingredient in the simulator.
     """
     def __init__(self):
         self.name = None
