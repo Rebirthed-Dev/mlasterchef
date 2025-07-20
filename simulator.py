@@ -459,6 +459,7 @@ class Match:
         self.awaydishes = []
         self.judgeCount = 3
         self.judges = [Judge() for x in range(self.judgeCount)] # Creates set of Judges
+        self.output = []
 
         for player in home.runners + home.chefs:
             player.isHome = True
@@ -621,6 +622,7 @@ class Match:
                 print(f"Judge {judge.name} has awarded {dish.name} {points} points")
                 awaypoints += points
             print("--------------------------------------------------")
+        self.output = [homepoints, awaypoints]
         if homepoints == awaypoints:
             print(f"Tie \nHome: {homepoints}\nAway: {awaypoints}")
         elif homepoints > awaypoints:
@@ -675,6 +677,8 @@ def main():
 
     while match.phase != "Done":
         match.step()
+
+    return match
 
 if __name__ == "__main__":
     main()
