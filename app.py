@@ -5,4 +5,4 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     match = simulator.main()
-    return '<br>'.join(match.output)
+    return 'Hello'
