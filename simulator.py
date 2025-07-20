@@ -11,7 +11,7 @@ class Ingredient:
     """
     This class represents an ingredient in the simulator.
     """
-    def __init__(self):
+    def __init__(self, special=None):
         self.name = None
         self.quality = 0
         self.sweet = 0
@@ -29,19 +29,33 @@ class Ingredient:
         self.element = None
         self.sentience = 0
 
-        with open("data/food/foods.json") as f:
-            json_data = json.load(f)
-            name = random.choice(list(json_data.keys()))
-            data = json_data[name]
-            self.name = name
-            for stat, value in data.items():
-                if stat in ["atomicnumber", "sentience", "element", "arcana"]:
-                    setattr(self, stat, value)
-                else:
-                    setattr(self, stat, random.randint(value["min"], value["max"]))
+        if special:
+            if special == "pity":
+                with open("data/food/water.json") as f:
+                    json_data = json.load(f)
+                    name = random.choice(list(json_data.keys()))
+                    data = json_data[name]
+                    self.name = "Pity Water"
+                    for stat, value in data.items():
+                        if stat in ["atomicnumber", "sentience", "element", "arcana"]:
+                            setattr(self, stat, value)
+                        else:
+                            setattr(self, stat, random.randint(value["min"], value["max"]))
+        else:
+            with open("data/food/foods.json") as f:
+                json_data = json.load(f)
+                name = random.choice(list(json_data.keys()))
+                data = json_data[name]
+                self.name = name
+                for stat, value in data.items():
+                    if stat in ["atomicnumber", "sentience", "element", "arcana"]:
+                        setattr(self, stat, value)
+                    else:
+                        setattr(self, stat, random.randint(value["min"], value["max"]))
 
     def __str__(self):
         return f"{self.name} \nQuality: {self.quality} \nSweet: {self.sweet} \nSalt: {self.salt} \nBlendability: {self.blendability} \nTemp: {self.temperature} \nLiquidity: {self.liquidity} \nSize: {self.size} \nRot: {self.rot} \nHoliness: {self.holiness} \nEaten: {self.eaten} \nLuck: {self.luck} \nArcana: {self.arcana} \nAN: {self.atomicnumber} \nElement: {self.element} \nSentience: {self.sentience} \n"
+
 
 class Appliance:
     def __init__(self, name, statEffects:{}):
@@ -60,10 +74,10 @@ class Appliance:
         :return: Modified Ingredient object
         """
         for stat, change in self.statEffects.items():
-            print(f"{self.name} used to increase {stat} by {change}")
+            #print(f"{self.name} used to increase {stat} by {change}")
             setattr(ingredient, stat, min(max(getattr(ingredient, stat) + change["add"], -50), 50))
             setattr(ingredient, stat, min(max(getattr(ingredient, stat) * change["mult"],-50), 50))
-            print(f"{stat} increased to {getattr(ingredient, stat)}")
+            #print(f"{stat} increased to {getattr(ingredient, stat)}")
         return ingredient
 
 class Dish:
@@ -358,6 +372,8 @@ class Player:
         :return: none
         """
         appliance = random.choice(kitchen.appliances)
+        if kitchen.ingredients == []:
+            kitchen.ingredients.append(Ingredient("pity"))
         ingredientNum = random.randint(0, len(kitchen.ingredients)-1)
         kitchen.ingredients[ingredientNum] = appliance.applianceUsed(kitchen.ingredients[ingredientNum])
 
@@ -479,7 +495,7 @@ class Match:
         :return: none
         """
         # Generate Ingredients for Pile
-        for x in range(0, random.randint(10, 20)):
+        for x in range(0, random.randint(0, 1)):
             self.pile.append(Ingredient())
 
         for x in self.pile: # prints all ingredients for debug purposes

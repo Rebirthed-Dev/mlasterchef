@@ -1,0 +1,19 @@
+{
+  "pity water" : {
+    "quality": {"min": 0, "max": 1},
+    "sweet": {"min": 0, "max": 1},
+    "salt": {"min": 0, "max": 1},
+    "blendability": {"min": 0, "max": 1},
+    "temperature": {"min": 0, "max": 1},
+    "liquidity": {"min": 0, "max": 1},
+    "size": {"min": 0, "max": 1},
+    "rot": {"min": 0, "max": 1},
+    "holiness": {"min": 0, "max": 1},
+    "eaten": {"min": 0, "max": 1},
+    "luck": {"min": 0, "max": 1},
+    "atomicnumber": 1,
+    "sentience": 0,
+    "element": "pitiful",
+    "arcana": "fool"
+  }
+}
