@@ -6,6 +6,8 @@ import json
 
 # Determines how many ingredients a Runner can carry at minimum. Strength modifiers add onto this additively.
 RUNNER_BASE_CARRY_CAPACITY = 2
+RUNNING_PILE_MINIMUM_INGREDIENTS = 5
+RUNNING_PILE_MAXIMUM_INGREDIENTS = 20
 
 class Ingredient:
     """
@@ -217,6 +219,8 @@ class Kitchen:
         """
         self.name = name
         self.appliances = []
+        # The INDEX of INGREDIENTS for the last ingredient used in cooking.
+        self.lastIngredient = None # used for Focus stat implementation
 
         with open("data/appliances/appliancelist.json") as f:
             for name, data in json.load(f)["appliances"].items():
@@ -331,7 +335,9 @@ class Player:
         self.gus = 1 #Gusto
         self.div = 1 #Divinity
         self.dis = 1 #Dissapointability
-        self.foc = 1 #Focus
+        self.foc = random.randint(1, 50)
+        # Uncomment this and comment the above if you'd like to test focus
+        #self.foc = 100
         self.str = random.randint(1, 50) #Strength - Determines Runner carry capacity bonuses.
         self.cow = 1 #Cowardice
         self.spd = random.randint(1,5) #Speed
@@ -374,7 +380,27 @@ class Player:
         appliance = random.choice(kitchen.appliances)
         if kitchen.ingredients == []:
             kitchen.ingredients.append(Ingredient("pity"))
-        ingredientNum = random.randint(0, len(kitchen.ingredients)-1)
+
+        ingredientNum = None # Chosen Ingredient to act upon
+
+        # might be a better boolean based way to do this and cut out an if/else expression but i can't think hard enough atm
+        # If there is no last ingredient choose at random.
+        if kitchen.lastIngredient == None:
+            ingredientNum = random.randint(0, len(kitchen.ingredients)-1)
+        # If the user's FOCUS does NOT proc, choose at random. 1 FOCUS point = 1% chance to employ effect.
+        elif not random.choices([False, True], [1 - self.foc, self.foc], k=1)[0]:
+            ingredientNum = random.randint(0, len(kitchen.ingredients)-1)
+        # If FOCUS procced, choose the last ingredient that was worked with.
+        else:
+            ingredientNum = kitchen.lastIngredient
+
+        # set the last ingredient
+        kitchen.lastIngredient = ingredientNum
+
+        # DEBUG OUTPUT - Uncomment/Comment if needed.
+        print(f"Chef - {self.name} - has decided to work on - {kitchen.ingredients[ingredientNum].name}.")
+
+        # use the selected appliance on the selected ingredient
         kitchen.ingredients[ingredientNum] = appliance.applianceUsed(kitchen.ingredients[ingredientNum])
 
 class Arena:
@@ -495,7 +521,7 @@ class Match:
         :return: none
         """
         # Generate Ingredients for Pile
-        for x in range(0, random.randint(0, 1)):
+        for x in range(0, random.randint(RUNNING_PILE_MINIMUM_INGREDIENTS, RUNNING_PILE_MAXIMUM_INGREDIENTS)):
             self.pile.append(Ingredient())
 
         for x in self.pile: # prints all ingredients for debug purposes
