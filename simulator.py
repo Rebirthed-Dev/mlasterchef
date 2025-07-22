@@ -58,7 +58,6 @@ class Ingredient:
     def __str__(self):
         return f"{self.name} \nQuality: {self.quality} \nSweet: {self.sweet} \nSalt: {self.salt} \nBlendability: {self.blendability} \nTemp: {self.temperature} \nLiquidity: {self.liquidity} \nSize: {self.size} \nRot: {self.rot} \nHoliness: {self.holiness} \nEaten: {self.eaten} \nLuck: {self.luck} \nArcana: {self.arcana} \nAN: {self.atomicnumber} \nElement: {self.element} \nSentience: {self.sentience} \n"
 
-
 class Appliance:
     def __init__(self, name, statEffects:{}):
         """
@@ -388,7 +387,7 @@ class Player:
         if kitchen.lastIngredient == None:
             ingredientNum = random.randint(0, len(kitchen.ingredients)-1)
         # If the user's FOCUS does NOT proc, choose at random. 1 FOCUS point = 1% chance to employ effect.
-        elif not random.choices([False, True], [1 - self.foc, self.foc], k=1)[0]:
+        elif not random.choices([False, True], [100 - self.foc, self.foc], k=1)[0]:
             ingredientNum = random.randint(0, len(kitchen.ingredients)-1)
         # If FOCUS procced, choose the last ingredient that was worked with.
         else:
@@ -603,7 +602,18 @@ class Match:
                         runner.inventory.append(chosen_ingredient)
                         self.pile.remove(chosen_ingredient)
                     elif selected_action == "attack": # attack code currently does nothing
-                        pass
+                        while True:
+                            target = random.choice(list(pile_runners.items()))[0]
+                            if target.teamName != runner.teamName:
+                                if target in cowards:
+                                    cowards.remove(target)
+                                break
+                        print(f"{runner.name} has attacked {target.name}!")
+                        if target.inventory != []:
+                            print(f"They drop their {target.inventory[0].name}!\n")
+                            self.pile.append(target.inventory.pop(0))
+                        else:
+                            print(f"But they had nothing to drop!")
                     else:
                         cowards.append(runner)
 
@@ -636,6 +646,8 @@ class Match:
             self.phase = "Judging"
         else:
             self.phase = "Preparation"
+            self.home.kitchen.lastIngredient = None
+            self.away.kitchen.lastIngredient = None
 
     def judging(self):
         """
